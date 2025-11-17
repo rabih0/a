@@ -1,0 +1,202 @@
+:root {
+    --primary-color: #00FFFF; /* Cyan */
+    --text-color: #FFFFFF;
+    --background-color: #00051a; /* Dark Blue/Black */
+    --glass-bg: rgba(20, 25, 50, 0.5);
+    --glass-border: rgba(0, 255, 255, 0.3);
+}
+
+body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    text-align: center;
+}
+
+.container {
+    width: 100%;
+    max-width: 400px; /* Mobile-first design */
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+#welcome-message {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 40px;
+    text-shadow: 0 0 10px var(--primary-color);
+}
+
+#app-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.interactive-core {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,255,255,0.8) 0%, rgba(0,25,51,0.5) 70%);
+    border: 2px solid var(--glass-border);
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: pulse 4s infinite ease-in-out;
+    transition: transform 0.3s ease;
+}
+
+.interactive-core:hover {
+    transform: scale(1.1);
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(0, 255, 255, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 20px rgba(0, 255, 255, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(0, 255, 255, 0);
+    }
+}
+
+.ai-text {
+    font-size: 18px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.glass-input {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    color: var(--text-color);
+    padding: 15px;
+    font-size: 16px;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.glass-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.chip-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.chip {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 8px 15px;
+    font-size: 14px;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.service-matrix {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+
+.hologram-button {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-color);
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s, box-shadow 0.3s;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.hologram-button:hover {
+    background: rgba(0, 255, 255, 0.2);
+    box-shadow: 0 0 15px var(--primary-color);
+}
+
+.hologram-button.selected {
+    background: var(--primary-color);
+    color: var(--background-color);
+    font-weight: bold;
+    box-shadow: 0 0 20px var(--primary-color);
+}
+
+.quote-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 15px;
+    padding: 30px;
+    margin-top: 20px;
+    width: 90%;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    animation: fadeIn 1s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.quote-card h3 {
+    margin: 0 0 10px 0;
+    color: var(--primary-color);
+}
+
+.quote-card p {
+    font-size: 28px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.action-icons {
+    margin-top: 20px;
+    display: flex;
+    gap: 25px;
+    justify-content: center;
+}
+
+.action-icons svg {
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    fill: var(--primary-color);
+    transition: transform 0.3s, filter 0.3s;
+}
+
+.action-icons svg:hover {
+    transform: scale(1.2);
+    filter: drop-shadow(0 0 8px var(--primary-color));
+}
+
+.pdf-expansion {
+    margin-top: 20px;
+    animation: fadeIn 0.5s ease;
+}
