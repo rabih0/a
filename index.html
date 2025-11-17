@@ -1,34 +1,67 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Umzugs-Assistent</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#00051a">
+    <title>bro</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
-    <!-- Icons for Add to Home Screen -->
-    <link rel="apple-touch-icon" sizes="180x180" href="icon-iphone.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-android.png">
+    <meta name="theme-color" content="#000000">
+    <link rel="apple-touch-icon" href="icon_180.PNG">
 </head>
 <body>
     <div class="container">
-        <div id="welcome-message">Hallo Rabih</div>
-        <div id="app-content">
-            <!-- Interactive content will be loaded here by JavaScript -->
-        </div>
+        <header>
+            <h1>Hallo Rabih</h1>
+            <p>Ihr Umzugs-Assistent für Hamburg</p>
+        </header>
+
+        <main id="app">
+            <div id="step-1" class="step active">
+                <h2>1. Adressen</h2>
+                <input type="text" id="start-address" placeholder="Startadresse (PLZ, Straße, Nr.)">
+                <input type="text" id="end-address" placeholder="Zieladresse (PLZ, Straße, Nr.)">
+                <button onclick="nextStep(2)">Weiter</button>
+            </div>
+
+            <div id="step-2" class="step">
+                <h2>2. Umzugsgut</h2>
+                <div id="items-container">
+                    <!-- Items will be added here by JS -->
+                </div>
+                <button onclick="addItem()">Gegenstand hinzufügen</button>
+                <br>
+                <label for="box-count">Anzahl der Kartons:</label>
+                <input type="number" id="box-count" min="0" value="0">
+                <button onclick="prevStep(1)">Zurück</button>
+                <button onclick="nextStep(3)">Weiter</button>
+            </div>
+
+            <div id="step-3" class="step">
+                <h2>3. Details</h2>
+                <label for="floor-start">Etage am Start:</label>
+                <input type="number" id="floor-start" value="0">
+                <label>Aufzug am Start? <input type="checkbox" id="elevator-start"></label>
+                <br>
+                <label for="floor-end">Etage am Ziel:</label>
+                <input type="number" id="floor-end" value="0">
+                <label>Aufzug am Ziel? <input type="checkbox" id="elevator-end"></label>
+                <button onclick="prevStep(2)">Zurück</button>
+                <button onclick="showQuote()">Angebot berechnen</button>
+            </div>
+
+            <div id="quote-result" class="step">
+                <h2>Ihr Angebot</h2>
+                <div id="quote-details"></div>
+                <button onclick="startOver()">Neu starten</button>
+            </div>
+        </main>
+
+        <footer>
+            <p>Aischa AI</p>
+        </footer>
     </div>
+
     <script src="script.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js').then(registration => {
-                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                }, err => {
-                    console.log('ServiceWorker registration failed: ', err);
-                });
-            });
-        }
-    </script>
 </body>
 </html>
