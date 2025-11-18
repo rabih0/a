@@ -1,21 +1,24 @@
 {
-    "short_name": "bro",
-    "name": "bro - Ihr Umzugs-Assistent",
-    "description": "Ihr KI-gestützter Umzugs-Assistent für Sofort-Angebote.",
-    "icons": [
-        {
-            "src": "icon-android.png",
-            "type": "image/png",
-            "sizes": "192x192"
-        },
-        {
-            "src": "icon-iphone.png",
-            "type": "image/png",
-            "sizes": "180x180"
-        }
-    ],
-    "start_url": "/index.html",
-    "display": "standalone",
-    "theme_color": "#00FFFF",
-    "background_color": "#00051a"
+  "name": "bro Umzugsassistent",
+  "short_name": "bro",
+  "description": "Ein KI-Assistent zur Erstellung und Verwaltung von Umzugsangeboten.",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#0284c7",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ]
 }

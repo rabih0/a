@@ -1,67 +1,848 @@
+
+
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="de" class="h-100">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>bro</title>
-    <link rel="stylesheet" href="style.css">
+    <title>bro Umzugsassistent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- =================================================================== -->
+    <!--  أكواد أيقونات PWA (PWA & App Icon Codes)                            -->
+    <!--  استبدل الملفات التالية بملفات الأيقونات الخاصة بك بنفس الأسماء -->
+    <!-- =================================================================== -->
+    
+    <!-- ملف Manifest لأندرويد -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#000000">
-    <link rel="apple-touch-icon" href="icon_180.PNG">
+
+    <!-- لون شريط المتصفح (Theme Color) -->
+    <meta name="theme-color" content="#f1f5f9">
+
+    <!-- أيقونة آيفون (Apple Touch Icon) - (المقاس الموصى به 180x180) -->
+    <link rel="apple-touch-icon" href="apple-touch-icon-180x180.png">
+    
+    <!-- تفعيل وضع التطبيق ملء الشاشة على iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+    <!-- أيقونات المتصفح القياسية (Favicons) -->
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+
+    <!-- =================================================================== -->
+
+    <!-- تحميل خط احترافي (Inter Font) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* استخدام الخط الاحترافي كخط أساسي */
+        body {
+            font-family: 'Inter', sans-serif;
+            overscroll-behavior: none; /* منع "السحب للإنعاش" */
+        }
+        
+        /* إخفاء شريط التمرير لمظهر أنظف */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* أنماط مخصصة للحالة النشطة في شريط التنقل */
+        footer button.active svg {
+            color: #0284c7; /* لون أزرق سماوي عند التفعيل */
+        }
+        footer button.active span {
+            color: #0284c7;
+        }
+    </style>
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1>Hallo Rabih</h1>
-            <p>Ihr Umzugs-Assistent für Hamburg</p>
-        </header>
+<body class="bg-slate-100 text-slate-900 h-screen flex flex-col antialiased">
 
-        <main id="app">
-            <div id="step-1" class="step active">
-                <h2>1. Adressen</h2>
-                <input type="text" id="start-address" placeholder="Startadresse (PLZ, Straße, Nr.)">
-                <input type="text" id="end-address" placeholder="Zieladresse (PLZ, Straße, Nr.)">
-                <button onclick="nextStep(2)">Weiter</button>
+    <!-- ======================= -->
+    <!--    Header (New)         -->
+    <!-- ======================= -->
+    <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">
+        <div class="max-w-md mx-auto px-4 py-4">
+            <h1 id="header-title" class="text-xl font-bold text-center text-slate-900">Angebot erstellen</h1>
+        </div>
+    </header>
+
+    <!-- ======================= -->
+    <!--    Main Content (Scrollable) -->
+    <!-- ======================= -->
+    <!-- flex-1 يسمح بالتمدد، overflow-y-auto يجعل هذا القسم فقط قابلاً للتمرير -->
+    <main class="flex-1 overflow-y-auto no-scrollbar pb-24">
+        
+        <!-- ======================= -->
+        <!--    Page 1: Create Offer -->
+        <!-- ======================= -->
+        <div id="page-create" class="page-content p-4 max-w-md mx-auto">
+            <!-- Loading Spinner -->
+            <div id="create-loading" class="hidden text-center py-10">
+                <svg class="animate-spin h-10 w-10 text-sky-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="mt-4 text-slate-600 font-medium">Angebot wird erstellt...</p>
             </div>
 
-            <div id="step-2" class="step">
-                <h2>2. Umzugsgut</h2>
-                <div id="items-container">
-                    <!-- Items will be added here by JS -->
+            <!-- Input Section -->
+            <div id="create-input-section" class="space-y-4">
+                <label for="eckdaten" class="block text-sm font-medium text-slate-700">Geben Sie die Eckdaten ein:</label>
+                <textarea id="eckdaten" rows="8" class="w-full p-3 border border-slate-300 rounded-xl shadow-sm focus:ring-sky-500 focus:border-sky-500 text-base" placeholder="z.B. 80m², 2.OG, Küche, 2 Personen, von A nach B..."></textarea>
+                
+                <button id="enhance-eckdaten-btn" class="w-full bg-indigo-500 text-white py-3 px-3 rounded-xl font-semibold shadow-md hover:bg-indigo-600 transition-all flex items-center justify-center text-sm active:scale-95">
+                    <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
+                    Eckdaten mit KI prüfen
+                </button>
+                
+                <button id="create-offer-btn" class="w-full bg-sky-600 text-white py-3 px-4 rounded-xl font-bold shadow-lg hover:bg-sky-700 transition-all flex items-center justify-center active:scale-95">
+                    <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.47-2.47L14.25 6l1.036-.259a3.375 3.375 0 002.47-2.47L18 2.25l.259 1.036a3.375 3.375 0 002.47 2.47L21.75 6l-1.035.259a3.375 3.375 0 00-2.47 2.47z" /></svg>
+                    Angebot mit KI erstellen
+                </button>
+            </div>
+
+            <!-- Output Section -->
+            <div id="create-output-section" class="hidden space-y-4">
+                <label for="generated-offer" class="block text-sm font-medium text-slate-700">Für den Kunden (zum Kopieren):</label>
+                <div class="relative">
+                    <textarea id="generated-offer" rows="12" class="w-full p-3 bg-white border border-slate-300 rounded-xl shadow-sm text-base" readonly></textarea>
+                    <button id="copy-offer-btn" class="absolute top-2 right-2 bg-slate-200 text-slate-700 p-2 rounded-lg hover:bg-slate-300 active:scale-90 transition-all">
+                        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75c-.621 0-1.125-.504-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" /></svg>
+                    </button>
                 </div>
-                <button onclick="addItem()">Gegenstand hinzufügen</button>
-                <br>
-                <label for="box-count">Anzahl der Kartons:</label>
-                <input type="number" id="box-count" min="0" value="0">
-                <button onclick="prevStep(1)">Zurück</button>
-                <button onclick="nextStep(3)">Weiter</button>
+                
+                <button id="save-offer-btn" class="w-full bg-green-600 text-white py-3 px-4 rounded-xl font-semibold shadow-md hover:bg-green-700 transition-all flex items-center justify-center active:scale-95">
+                    <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                    Angebot speichern
+                </button>
+                
+                <button id="new-calculation-btn" class="w-full bg-slate-500 text-white py-3 px-4 rounded-xl font-semibold shadow-md hover:bg-slate-600 transition-all flex items-center justify-center active:scale-95">
+                    <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+                    Neue Berechnung
+                </button>
+            </div>
+        </div>
+
+        <!-- ======================= -->
+        <!--    Page 2: Saved Offers -->
+        <!-- ======================= -->
+        <div id="page-saved" class="page-content hidden p-4 max-w-md mx-auto">
+            <div id="saved-list" class="space-y-3">
+                <!-- العروض المحفوظة ستظهر هنا -->
+            </div>
+            <p id="saved-empty-state" class="hidden text-center text-slate-500 py-10">
+                <svg class="w-12 h-12 mx-auto text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                <span class="mt-2 block font-medium">Noch keine Angebote gespeichert.</span>
+                <span class="block text-sm">Gespeicherte Angebote erscheinen hier.</span>
+            </p>
+        </div>
+
+        <!-- ======================= -->
+        <!--    Page 3: AI Chat      -->
+        <!-- ======================= -->
+        <!-- يتطلب هذا القسم تنسيقاً خاصاً (flex) ليبقى شريط الإدخال في الأسفل -->
+        <div id="page-chat" class="page-content hidden p-0 max-w-md mx-auto h-full">
+            <div class="flex flex-col h-full">
+                <!-- منطقة الدردشة (قابلة للتمرير) -->
+                <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
+                    <!-- رسالة ترحيب من الروبوت -->
+                    <div class="flex justify-start">
+                        <div class="bg-white border border-slate-200 text-slate-800 p-3 rounded-xl rounded-bl-none max-w-xs shadow-sm">
+                            <p class="font-bold text-indigo-600 mb-1">bro-Profi</p>
+                            <p>Hallo Chef! Ich bin 'bro-Profi', Ihr persönlicher Assistent. Fragen Sie mich alles über Preisstrategien, Kundenbeschwerden oder das Verfassen professioneller E-Mails.</p>
+                        </div>
+                    </div>
+                    <!-- Chat messages will appear here -->
+                </div>
+                <!-- شريط إدخال الدردشة (ثابت في الأسفل) -->
+                <div class="bg-white border-t border-slate-200 p-3 sticky bottom-0">
+                    <div class="flex items-center space-x-2">
+                        <input type="text" id="chat-input" class="flex-1 w-full p-3 border border-slate-300 rounded-xl shadow-sm focus:ring-sky-500 focus:border-sky-500" placeholder="Frage an bro-Profi...">
+                        <button id="chat-send-btn" class="bg-sky-600 text-white p-3 rounded-xl shadow-lg hover:bg-sky-700 active:scale-95 transition-all disabled:opacity-50">
+                            <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.875L5.999 12zm0 0h7.5" /></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ======================= -->
+    <!--    Bottom Nav Bar       -->
+    <!-- ======================= -->
+    <footer class="bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t border-slate-200 fixed bottom-0 left-0 right-0 z-10">
+        <nav class="max-w-md mx-auto flex justify-around items-center h-20">
+            <button data-page="page-create" class="nav-btn flex flex-col items-center justify-center text-slate-500 w-1/3 active">
+                <!-- أيقونة SVG: إنشاء عرض -->
+                <svg class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m-3.75-6v6m-3.75-6v6M3 14.25v-2.625a3.375 3.375 0 013.375-3.375h1.5A1.125 1.125 0 009 7.125v-1.5A3.375 3.375 0 0112.375 2.25H15.75M3 14.25v-2.625" /></svg>
+                <span class="text-xs font-medium mt-1">Erstellen</span>
+            </button>
+            <button data-page="page-saved" class="nav-btn flex flex-col items-center justify-center text-slate-500 w-1/3">
+                <!-- أيقونة SVG: العروض المحفوظة -->
+                <svg class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                <span class="text-xs font-medium mt-1">Gespeichert</span>
+            </button>
+            <button data-page="page-chat" class="nav-btn flex flex-col items-center justify-center text-slate-500 w-1/3">
+                <!-- أيقونة SVG: محادثة AI -->
+                <svg class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-3.86 8.25-8.625 8.25S3.75 16.556 3.75 12 7.61 3.75 12.375 3.75s8.625 3.694 8.625 8.25z" /></svg>
+                <span class="text-xs font-medium mt-1">KI-Chat</span>
+            </button>
+        </nav>
+    </footer>
+
+    <!-- ======================= -->
+    <!--    Modals (Hidden)      -->
+    <!-- ======================= -->
+
+    <!-- Saved Offer Detail/Edit Modal -->
+    <div id="detail-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-40 p-4 transition-opacity duration-300">
+        <div class="bg-slate-100 rounded-xl shadow-2xl w-full max-w-md p-5 transform transition-all scale-95 opacity-0" id="detail-modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold text-slate-900" id="detail-modal-title">Gespeichertes Angebot</h2>
+                <button id="close-detail-modal-btn" class="text-slate-500 hover:text-slate-800">
+                    <svg class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            
+            <div id="detail-view-mode" class="space-y-3">
+                <h3 class="text-sm font-medium text-slate-600">Eckdaten:</h3>
+                <p id="detail-eckdaten" class="bg-white p-3 rounded-lg border border-slate-200 text-sm"></p>
+                
+                <h3 class="text-sm font-medium text-slate-600">Generierter Text:</h3>
+                <textarea id="detail-generated" rows="10" class="w-full p-3 bg-white border border-slate-300 rounded-lg shadow-sm text-base" readonly></textarea>
+                
+                <div class="flex space-x-2 pt-2">
+                    <button id="copy-detail-btn" class="flex-1 bg-sky-600 text-white py-3 px-4 rounded-xl font-semibold shadow-md hover:bg-sky-700 active:scale-95 transition-all flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75c-.621 0-1.125-.504-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" /></svg>
+                        Text kopieren
+                    </button>
+                    <button id="edit-offer-btn" class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-xl font-semibold shadow-md hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
+                        Bearbeiten
+                    </button>
+                </div>
             </div>
 
-            <div id="step-3" class="step">
-                <h2>3. Details</h2>
-                <label for="floor-start">Etage am Start:</label>
-                <input type="number" id="floor-start" value="0">
-                <label>Aufzug am Start? <input type="checkbox" id="elevator-start"></label>
-                <br>
-                <label for="floor-end">Etage am Ziel:</label>
-                <input type="number" id="floor-end" value="0">
-                <label>Aufzug am Ziel? <input type="checkbox" id="elevator-end"></label>
-                <button onclick="prevStep(2)">Zurück</button>
-                <button onclick="showQuote()">Angebot berechnen</button>
+            <div id="detail-edit-mode" class="hidden space-y-3">
+                <input type="hidden" id="edit-doc-id">
+                <h3 class="text-sm font-medium text-slate-600">Eckdaten (Bearbeiten):</h3>
+                <textarea id="edit-eckdaten" rows="4" class="w-full p-3 bg-white border border-slate-300 rounded-lg shadow-sm text-base focus:ring-sky-500 focus:border-sky-500"></textarea>
+                
+                <h3 class="text-sm font-medium text-slate-600">Generierter Text (Bearbeiten):</h3>
+                <textarea id="edit-generated" rows="10" class="w-full p-3 bg-white border border-slate-300 rounded-lg shadow-sm text-base focus:ring-sky-500 focus:border-sky-500"></textarea>
+                
+                <div class="flex space-x-2 pt-2">
+                    <button id="cancel-edit-btn" class="flex-1 bg-slate-500 text-white py-3 px-4 rounded-xl font-semibold shadow-md hover:bg-slate-600 active:scale-95 transition-all">Abbrechen</button>
+                    <button id="save-edit-btn" class="flex-1 bg-green-600 text-white py-3 px-4 rounded-xl font-semibold shadow-md hover:bg-green-700 active:scale-95 transition-all">Speichern</button>
+                </div>
             </div>
-
-            <div id="quote-result" class="step">
-                <h2>Ihr Angebot</h2>
-                <div id="quote-details"></div>
-                <button onclick="startOver()">Neu starten</button>
-            </div>
-        </main>
-
-        <footer>
-            <p>Aischa AI</p>
-        </footer>
+        </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Global Toast Notification -->
+    <div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-900 text-white py-2 px-5 rounded-full shadow-lg transition-all duration-300 opacity-0 -translate-y-5 z-50">
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- ======================= -->
+    <!--    JavaScript (App)     -->
+    <!-- ======================= -->
+    <script type="module">
+        // --- (تمت إزالة جميع واردات Firebase) ---
+
+        // --- Config & Prompts ---
+        const GEMINI_API_KEY = ""; // اترك هذا فارغاً
+        const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
+        
+        const OFFER_SYSTEM_PROMPT = `Du bist 'bro', ein professioneller Umzugsassistent. Deine Aufgabe ist es, ein höfliches und vollständiges Angebot für einen Kunden zu schreiben, basierend auf den vom Benutzer angegebenen Eckdaten.
+            Struktur des Angebots:
+            1.  **Anrede:** Höfliche Begrüßung (z.B. "Sehr geehrte Damen und Herren," oder "Hallo [Name, falls angegeben]").
+            2.  **Dank:** Bedanke dich für die Anfrage.
+            3.  **Details:** Fasse die Eckdaten zusammen (z.B. "Umzug von [Adresse A] nach [Adresse B]", "Wohnungsgröße: 80m²", "Etage: 2.OG").
+            4.  **Preis (WICHTIG):** Gib *immer* einen *fiktiven* Preis an. Nenne einen Nettopreis (z.B. 800,00 €) und den Bruttopreis (z.B. 952,00 € inkl. 19% MwSt.).
+            5.  **Inklusivleistungen:** Liste auf, was enthalten ist (z.B. "LKW 7,5t", "3 Packer", "Transportversicherung", "Montage/Demontage").
+            6.  **Abschluss:** Freundliche Schlussformel und Vorfreude auf eine Zusammenarbeit.
+            Sprich immer höflich, professionell und auf Deutsch.`;
+
+        const CHAT_SYSTEM_PROMPT = `Du bist 'bro-Profi', ein erfahrener Stratege und Branchenexperte für Umzüge und Logistik in Hamburg. Deine Mission ist es, dem Benutzer (dem Firmeninhaber) zu helfen, sein Geschäft besser zu führen. Du schreibst *keine* Kundenangebote.
+            Deine Aufgaben:
+            -   Beantworte Fragen zu Preisstrategien (z.B. "Wie berechne ich einen Klaviertransport?").
+            -   Hilf bei Kundenbeschwerden (z.B. "Kunde sagt, der Preis ist zu hoch." oder "Ein Möbelstück wurde beschädigt.").
+            -   Formuliere professionelle E-Mails (z.B. Auftragsbestätigungen, Rechnungen, Mahnungen).
+            -   Gib allgemeine Geschäftstipps.
+            Sei direkt, ehrlich, professionell und unterstützend. Gib dem Benutzer umsetzbare Ratschläge und Formulierungsbeispiele. Du sprichst nur mit dem Firmeninhaber, nicht mit dessen Kunden.`;
+        
+        const ENHANCE_SYSTEM_PROMPT = `Du bist ein 'bro' Umzugsassistent. Der Benutzer gibt Eckdaten für ein Angebot ein. Deine Aufgabe ist es, *nur* eine kurze Checkliste (als Bullet Points, 3-4 Punkte) mit wichtigen Folgefragen oder vergessenen Punkten zu generieren, die das Angebot präziser machen würden.
+            
+Beispiel-Eingabe: "80m², 2.OG, Küche"
+Beispiel-Ausgabe:
+- Haben Sie einen Keller oder Dachboden?
+- Besondere Gegenstände (z.B. Klavier, Safe, große Pflanzen)?
+- Müssen Lampen demontiert werden?
+- Wird Verpackungsmaterial benötigt?
+
+Antworte *nur* mit der Checkliste. Sei kurz und präzise auf Deutsch.`;
+
+        // --- Global State ---
+        // --- (تمت إزالة متغيرات Firebase) ---
+        let currentChatHistory = [];
+        let toastTimeout;
+
+        // --- DOM Elements ---
+        const headerTitle = document.getElementById('header-title');
+        
+        const navButtons = document.querySelectorAll('.nav-btn');
+        const pageContents = document.querySelectorAll('.page-content');
+        
+        // Page 1: Create
+        const createInputSection = document.getElementById('create-input-section');
+        const eckdatenTextarea = document.getElementById('eckdaten');
+        const createOfferBtn = document.getElementById('create-offer-btn');
+        const enhanceEckdatenBtn = document.getElementById('enhance-eckdaten-btn');
+        const createLoading = document.getElementById('create-loading');
+        const createOutputSection = document.getElementById('create-output-section');
+        const generatedOfferTextarea = document.getElementById('generated-offer');
+        const copyOfferBtn = document.getElementById('copy-offer-btn');
+        const saveOfferBtn = document.getElementById('save-offer-btn');
+        const newCalculationBtn = document.getElementById('new-calculation-btn');
+        
+        // Page 2: Saved
+        const savedList = document.getElementById('saved-list');
+        const savedEmptyState = document.getElementById('saved-empty-state');
+        
+        // Page 3: Chat
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const chatSendBtn = document.getElementById('chat-send-btn');
+        
+        // Modals
+        const detailModal = document.getElementById('detail-modal');
+        const detailModalContent = document.getElementById('detail-modal-content');
+        const closeDetailModalBtn = document.getElementById('close-detail-modal-btn');
+        
+        const detailViewMode = document.getElementById('detail-view-mode');
+        const detailEckdaten = document.getElementById('detail-eckdaten');
+        const detailGenerated = document.getElementById('detail-generated');
+        const copyDetailBtn = document.getElementById('copy-detail-btn');
+        const editOfferBtn = document.getElementById('edit-offer-btn');
+        
+        const detailEditMode = document.getElementById('detail-edit-mode');
+        const editDocId = document.getElementById('edit-doc-id');
+        const editEckdaten = document.getElementById('edit-eckdaten');
+        const editGenerated = document.getElementById('edit-generated');
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        const saveEditBtn = document.getElementById('save-edit-btn');
+        
+        // Global Toast
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+
+        // --- Core Functions ---
+
+        /**
+         * يعرض رسالة منبثقة (Toast)
+         */
+        function showToast(message) {
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastMessage.textContent = message;
+            toast.classList.remove('opacity-0', '-translate-y-5');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', '-translate-y-5');
+            }, 3000);
+        }
+
+        /**
+         * نسخ النص إلى الحافظة
+         */
+        function copyToClipboard(text) {
+            if (!text) return;
+            try {
+                // الطريقة الحديثة (تحتاج HTTPS)
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text);
+                } else {
+                    // الطريقة القديمة (لبيئات مثل HTTP أو iFrames)
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    textArea.style.position = 'fixed'; // إخفاء
+                    textArea.style.left = '-9999px';
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                }
+                showToast("Text in Zwischenablage kopiert!");
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+                showToast("Kopieren fehlgeschlagen.");
+            }
+        }
+
+        /**
+         * (تمت إزالة دالة initializeFirebase)
+         */
+
+        /**
+         * استدعاء Gemini API
+         * @param {string} userPrompt - إدخال المستخدم
+         * @param {string} systemPrompt - موجه النظام
+         * @param {Array} [history] - سجل المحادثة (اختياري)
+         * @returns {Promise<string|null>} - نص الاستجابة
+         */
+        async function callGeminiApi(userPrompt, systemPrompt, history = []) {
+            const payload = {
+                contents: [
+                    ...history,
+                    {
+                        role: "user",
+                        parts: [{ text: userPrompt }]
+                    }
+                ],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                }
+            };
+            
+            // console.log("Calling Gemini...", payload);
+
+            try {
+                const response = await fetch(GEMINI_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.json();
+                    console.error("API Error Response:", errorBody);
+                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                // console.log("Gemini Response:", result);
+                
+                if (result.candidates && result.candidates.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    return text;
+                } else {
+                    console.error("No valid response from API.");
+                    return null;
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                showToast("Fehler bei der KI-Anfrage.");
+                return null;
+            }
+        }
+
+        // --- Section 1: Create Offer Logic ---
+        
+        /**
+         * New Feature: Enhance Eckdaten using AI
+         */
+        async function handleEnhanceEckdaten() {
+            const eckdaten = eckdatenTextarea.value.trim();
+            if (eckdaten === "") {
+                showToast("Bitte geben Sie zuerst Eckdaten ein.");
+                return;
+            }
+
+            // Show loading state on the button itself
+            const originalBtnHTML = enhanceEckdatenBtn.innerHTML;
+            enhanceEckdatenBtn.innerHTML = `
+                <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                Wird geprüft...
+            `;
+            enhanceEckdatenBtn.disabled = true;
+
+            const suggestions = await callGeminiApi(eckdaten, ENHANCE_SYSTEM_PROMPT);
+
+            // Restore button
+            enhanceEckdatenBtn.innerHTML = originalBtnHTML;
+            enhanceEckdatenBtn.disabled = false;
+
+            if (suggestions) {
+                // Append suggestions to the textarea
+                eckdatenTextarea.value = eckdaten + "\n\nKI-Checkliste:\n" + suggestions;
+                // Focus and scroll to bottom
+                eckdatenTextarea.focus();
+                eckdatenTextarea.scrollTop = eckdatenTextarea.scrollHeight;
+                showToast("Checkliste hinzugefügt!");
+            } else {
+                showToast("Fehler beim Abrufen der Checkliste.");
+            }
+        }
+        
+        async function handleCreateOffer() {
+            const eckdaten = eckdatenTextarea.value.trim();
+            if (eckdaten === "") {
+                showToast("Bitte geben Sie Eckdaten ein.");
+                return;
+            }
+
+            createInputSection.classList.add('hidden');
+            createOutputSection.classList.add('hidden');
+            createLoading.classList.remove('hidden');
+
+            const generatedText = await callGeminiApi(eckdaten, OFFER_SYSTEM_PROMPT);
+
+            createLoading.classList.add('hidden');
+            createOutputSection.classList.remove('hidden');
+            
+            if (generatedText) {
+                generatedOfferTextarea.value = generatedText;
+            } else {
+                generatedOfferTextarea.value = "Entschuldigung, bei der Erstellung des Angebots ist ein Fehler aufgetreten.";
+            }
+        }
+
+        function handleNewCalculation() {
+            createOutputSection.classList.add('hidden');
+            createInputSection.classList.remove('hidden');
+            eckdatenTextarea.value = "";
+            generatedOfferTextarea.value = "";
+        }
+
+        async function handleSaveOffer() {
+            const eckdaten = eckdatenTextarea.value.trim();
+            const generatedText = generatedOfferTextarea.value.trim();
+            
+            if (!generatedText) {
+                showToast("Kein Angebot zum Speichern vorhanden.");
+                return;
+            }
+
+            try {
+                const newOffer = {
+                    id: crypto.randomUUID(), // إنشاء ID فريد
+                    input_prompt: eckdaten,
+                    generated_text: generatedText,
+                    date_saved: new Date().toISOString() // استخدام تنسيق ISO
+                };
+
+                const savedOffers = getSavedOffers();
+                savedOffers.push(newOffer);
+                localStorage.setItem('saved_quotes', JSON.stringify(savedOffers));
+                
+                showToast("Angebot erfolgreich gespeichert!");
+            } catch (error) {
+                console.error("Error saving document to localStorage: ", error);
+                showToast("Fehler beim Speichern.");
+            }
+        }
+
+        // --- Section 2: Saved Offers Logic (LocalStorage) ---
+
+        /**
+         * (جديد) جلب العروض المحفوظة من localStorage
+         */
+        function getSavedOffers() {
+            const offersJSON = localStorage.getItem('saved_quotes');
+            return offersJSON ? JSON.parse(offersJSON) : [];
+        }
+
+        /**
+         * (تحديث) تحميل العروض، لم يعد "يستمع"
+         */
+        function loadSavedOffers() {
+            const savedOffers = getSavedOffers();
+            
+            savedList.innerHTML = ""; // مسح القائمة
+            if (!savedOffers || savedOffers.length === 0) {
+                savedEmptyState.classList.remove('hidden');
+            } else {
+                savedEmptyState.classList.add('hidden');
+                
+                // فرز النتائج يدوياً (الأحدث أولاً)
+                // تحويل date_saved (string) إلى Date
+                savedOffers.sort((a, b) => new Date(b.date_saved) - new Date(a.date_saved));
+
+                savedOffers.forEach((docData) => {
+                    const card = createOfferCard(docData.id, docData);
+                    savedList.appendChild(card);
+                });
+            }
+        }
+
+        function createOfferCard(id, data) {
+            const card = document.createElement('div');
+            card.className = "bg-white p-4 rounded-xl shadow-md border border-slate-200";
+            
+            // تحويل التاريخ من ISO string
+            const date = new Date(data.date_saved).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' });
+            const eckdaten = data.input_prompt || "Keine Eckdaten";
+
+            card.innerHTML = `
+                <p class="font-medium text-slate-800 truncate">${eckdaten.split('\n')[0]}</p>
+                <p class="text-sm text-slate-500 mb-3">${date}</p>
+                <div class="flex space-x-2">
+                    <button class="view-btn flex-1 bg-slate-100 text-slate-700 py-2 px-3 rounded-lg text-sm font-medium hover:bg-slate-200 active:scale-95 transition-all">Ansehen</button>
+                    <button class="edit-btn flex-1 bg-blue-100 text-blue-700 py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-200 active:scale-95 transition-all">Bearbeiten</button>
+                    <button class="delete-btn bg-red-100 text-red-700 p-2 rounded-lg hover:bg-red-200 active:scale-90 transition-all">
+                        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12.578 0a48.108 48.108 0 013.478-.397m0 0a48.04 48.04 0 016.622 0m-6.622 0L6.166 2.083a2.25 2.25 0 012.244-2.077h6.182a2.25 2.25 0 012.244 2.077L14.74 5.79m-4.856 0M9.884 5.79l.26 9" /></svg>
+                    </button>
+                </div>
+            `;
+
+            // Event Listeners
+            card.querySelector('.view-btn').addEventListener('click', () => openDetailModal(id, data, 'view'));
+            card.querySelector('.edit-btn').addEventListener('click', () => openDetailModal(id, data, 'edit'));
+            
+            card.querySelector('.delete-btn').addEventListener('click', async () => {
+                // (تمت إزالة window.confirm())
+                try {
+                    let savedOffers = getSavedOffers();
+                    savedOffers = savedOffers.filter(offer => offer.id !== id);
+                    localStorage.setItem('saved_quotes', JSON.stringify(savedOffers));
+                    
+                    showToast("Angebot gelöscht.");
+                    loadSavedOffers(); // إعادة تحميل القائمة
+                } catch (error) {
+                    console.error("Error deleting document from localStorage: ", error);
+                    showToast("Fehler beim Löschen.");
+                }
+            });
+
+            return card;
+        }
+
+        // --- Section 3: AI Chat Logic ---
+
+        function addChatMessage(role, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+            
+            const content = text.replace(/\n/g, '<br>'); // الحفاظ على فواصل الأسطر
+            
+            if (role === 'user') {
+                messageDiv.innerHTML = `
+                    <div class="bg-sky-600 text-white p-3 rounded-xl rounded-br-none max-w-xs shadow-sm">
+                        ${content}
+                    </div>`;
+            } else {
+                // رسالة الروبوت
+                messageDiv.innerHTML = `
+                    <div class="bg-white border border-slate-200 text-slate-800 p-3 rounded-xl rounded-bl-none max-w-xs shadow-sm">
+                        <p class="font-bold text-indigo-600 mb-1">${role === 'model' ? 'bro-Profi' : 'Laden...'}</p>
+                        <div class="chat-content">${content}</div>
+                    </div>`;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            return messageDiv; // إرجاع العنصر لتحديثه (لـ loading)
+        }
+        
+        async function handleSendMessage() {
+            const prompt = chatInput.value.trim();
+            if (prompt === "") return;
+
+            chatInput.value = "";
+            chatSendBtn.disabled = true;
+
+            // 1. إضافة رسالة المستخدم
+            addChatMessage('user', prompt);
+            currentChatHistory.push({ role: 'user', parts: [{ text: prompt }] });
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // 2. إضافة مؤشر التحميل
+            const loadingMessage = addChatMessage('loading', `
+                <svg class="animate-spin h-5 w-5 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>`);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // 3. استدعاء API (استخدام سجل المحادثة)
+            const responseText = await callGeminiApi(prompt, CHAT_SYSTEM_PROMPT, currentChatHistory.slice(0, -1));
+
+            // 4. تحديث رسالة التحميل بالرد الفعلي
+            if (responseText) {
+                loadingMessage.querySelector('.chat-content').innerHTML = responseText.replace(/\n/g, '<br>');
+                loadingMessage.querySelector('p').textContent = 'bro-Profi'; // تحديث الاسم
+                currentChatHistory.push({ role: 'model', parts: [{ text: responseText }] });
+            } else {
+                loadingMessage.querySelector('.chat-content').innerHTML = "Entschuldigung, ich konnte keine Antwort generieren.";
+            }
+            
+            chatSendBtn.disabled = false;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+
+        // --- Modal Logic ---
+
+        function openDetailModal(id, data, mode = 'view') {
+            detailModal.classList.remove('hidden');
+            
+            // إظهار النافذة بتأثير
+            setTimeout(() => {
+                detailModal.classList.add('opacity-100');
+                detailModalContent.classList.remove('scale-95', 'opacity-0');
+                detailModalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+
+            if (mode === 'view') {
+                detailModalTitle.textContent = "Gespeichertes Angebot";
+                detailEckdaten.textContent = data.input_prompt || "N/A";
+                detailGenerated.value = data.generated_text || "N/A";
+                detailViewMode.classList.remove('hidden');
+                detailEditMode.classList.add('hidden');
+                
+                // ربط الأحداث (يجب إعادة ربطها لأنها داخل النافذة)
+                copyDetailBtn.onclick = () => copyToClipboard(detailGenerated.value);
+                editOfferBtn.onclick = () => openDetailModal(id, data, 'edit');
+
+            } else if (mode === 'edit') {
+                detailModalTitle.textContent = "Angebot bearbeiten";
+                editDocId.value = id;
+                editEckdaten.value = data.input_prompt || "";
+                editGenerated.value = data.generated_text || "";
+                detailViewMode.classList.add('hidden');
+                detailEditMode.classList.remove('hidden');
+                
+                // ربط أحداث التحرير
+                cancelEditBtn.onclick = () => openDetailModal(id, data, 'view'); // العودة لوضع العرض
+                saveEditBtn.onclick = handleSaveEdit;
+            }
+        }
+
+        function closeDetailModal() {
+            detailModalContent.classList.add('scale-95', 'opacity-0');
+            detailModalContent.classList.remove('scale-100', 'opacity-100');
+            detailModal.classList.remove('opacity-100');
+            
+            setTimeout(() => {
+                detailModal.classList.add('hidden');
+            }, 300); // انتظار انتهاء الأنيميشن
+        }
+
+        async function handleSaveEdit() {
+            const id = editDocId.value;
+            const updatedEckdaten = editEckdaten.value;
+            const updatedGenerated = editGenerated.value;
+            
+            if (!id) return;
+            
+            saveEditBtn.disabled = true;
+            saveEditBtn.textContent = "Speichern...";
+            
+            try {
+                let savedOffers = getSavedOffers();
+                // تحديث العرض المطابق
+                savedOffers = savedOffers.map(offer => {
+                    if (offer.id === id) {
+                        return {
+                            ...offer,
+                            input_prompt: updatedEckdaten,
+                            generated_text: updatedGenerated
+                        };
+                    }
+                    return offer;
+                });
+                
+                localStorage.setItem('saved_quotes', JSON.stringify(savedOffers));
+                
+                showToast("Änderungen gespeichert!");
+                closeDetailModal();
+                loadSavedOffers(); // إعادة تحميل القائمة
+            } catch (error) {
+                console.error("Error updating document in localStorage: ", error);
+                showToast("Fehler beim Speichern.");
+            } finally {
+                saveEditBtn.disabled = false;
+                saveEditBtn.textContent = "Speichern";
+            }
+        }
+
+
+        // --- Navigation Logic ---
+
+        function showPage(pageId) {
+            // 1. إخفاء جميع الصفحات
+            pageContents.forEach(page => page.classList.add('hidden'));
+            
+            // 2. إظهار الصفحة المطلوبة
+            const activePage = document.getElementById(pageId);
+            activePage.classList.remove('hidden');
+            
+            // 3. تحديث حالة أزرار التنقل
+            let newTitle = "bro Assistent";
+            navButtons.forEach(btn => {
+                if (btn.dataset.page === pageId) {
+                    btn.classList.add('active');
+                    // 4. تحديث عنوان الرأس (Header)
+                    newTitle = btn.querySelector('span').textContent;
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // حالة خاصة لاسم "إنشاء عرض"
+            if (pageId === 'page-create') {
+                headerTitle.textContent = "Angebot erstellen";
+            } else if (pageId === 'page-chat') {
+                headerTitle.textContent = "bro-Profi KI-Chat";
+                // ضبط ارتفاع صفحة الدردشة لملء الشاشة المتبقية
+                activePage.style.height = '100%';
+            } else {
+                headerTitle.textContent = newTitle;
+            }
+
+            // 5. تحميل البيانات للصفحة (إذا لزم الأمر)
+            if (pageId === 'page-saved') {
+                loadSavedOffers(); // (تحديث) استدعاء الدالة الجديدة
+            }
+        }
+
+        // --- App Initialization ---
+
+        function main() {
+            // (تمت إزالة تهيئة Firebase)
+
+            // 2. إعداد مستمعي الأحداث
+            
+            // التنقل
+            navButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    showPage(btn.dataset.page);
+                });
+            });
+
+            // القسم 1: إنشاء عرض
+            createOfferBtn.addEventListener('click', handleCreateOffer);
+            enhanceEckdatenBtn.addEventListener('click', handleEnhanceEckdaten);
+            newCalculationBtn.addEventListener('click', handleNewCalculation);
+            saveOfferBtn.addEventListener('click', handleSaveOffer);
+            copyOfferBtn.addEventListener('click', () => copyToClipboard(generatedOfferTextarea.value));
+            
+            // القسم 3: الدردشة
+            chatSendBtn.addEventListener('click', handleSendMessage);
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleSendMessage();
+            });
+            
+            // النوافذ المنبثقة (Modals)
+            closeDetailModalBtn.addEventListener('click', closeDetailModal);
+            // إغلاق النافذة عند النقر على الخلفية
+            detailModal.addEventListener('click', (e) => {
+                if (e.target === detailModal) {
+                    closeDetailModal();
+                }
+            });
+            
+            // 4. عرض الصفحة الافتراضية
+            showPage('page-create');
+        }
+
+        // بدء تشغيل التطبيق
+        main();
+
+    </script>
 </body>
 </html>
