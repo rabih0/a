@@ -353,37 +353,22 @@
         }
 
 
-        // --- Zentrale API-Aufruf-Funktion ---
+        // --- Zentrale API-Aufruf-Funktion (Proxy über lokalen Server) ---
+        // Hinweis: Wir senden nun die Anfrage an den lokalen Server unter /api/ai.
+        // Der Server hält den API-Schlüssel sicher in einer Umgebungsvariable.
         async function callGeminiAPI(systemPrompt, userQuery) {
-            
-            // API-Endpunkt (Gemini 1.5 Flash)
-            // WARNING: Storing API keys in client-side code is a major security risk.
-            // This key is visible to anyone who visits the website.
-            const apiKey = "AIzaSyBzd0KJA0phP1RQyTy3rzTo2wmocx_-Umo";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+            const apiUrl = '/api/ai';
 
-            const payload = {
-                contents: [{
-                    parts: [{ text: userQuery }]
-                }],
-                systemInstruction: {
-                    parts: [{ text: systemPrompt }]
-                },
-                generationConfig: {
-                    temperature: 0.7,
-                    maxOutputTokens: 1024,
-                }
-            };
-            
+            const payload = { systemPrompt, userQuery };
+
             // Exponential Backoff für Retries
-            let response;
             let retries = 0;
             const maxRetries = 3;
             let delay = 1000;
 
             while (retries < maxRetries) {
                 try {
-                    response = await fetch(apiUrl, {
+                    const response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
@@ -393,28 +378,27 @@
                         // Throttling oder Server-Fehler -> Retry
                         throw new Error(`Retryable error: ${response.status}`);
                     }
+
                     if (!response.ok) {
                         // Nicht-wiederholbarer Fehler
-                        throw new Error(`API error: ${response.status} ${response.statusText}`);
+                        const text = await response.text();
+                        throw new Error(`API error: ${response.status} ${response.statusText} - ${text}`);
                     }
-                    
+
                     // Erfolgreiche Antwort
                     const result = await response.json();
-                    
-                    if (result.candidates && result.candidates.length > 0 &&
-                        result.candidates[0].content && result.candidates[0].content.parts.length > 0) {
-                        return result.candidates[0].content.parts[0].text;
+                    if (result && result.text) {
+                        return result.text;
                     } else {
-                        // Gültige Antwort, aber kein Inhalt (z.B. Safety-Filter)
-                        console.warn("API response missing content:", result);
-                        throw new Error("Die KI hat keine gültige Antwort gesendet.");
+                        console.warn('Proxy returned no text:', result);
+                        throw new Error('Die KI hat keine gültige Antwort gesendet.');
                     }
 
                 } catch (error) {
-                    if (error.message.startsWith("Retryable")) {
+                    if (error.message && error.message.startsWith('Retryable')) {
                         retries++;
                         if (retries >= maxRetries) {
-                            throw new Error("Maximale Anzahl an Wiederholungen erreicht.");
+                            throw new Error('Maximale Anzahl an Wiederholungen erreicht.');
                         }
                         console.warn(`Retry ${retries}/${maxRetries} nach ${delay}ms...`);
                         await new Promise(res => setTimeout(res, delay));
@@ -425,8 +409,9 @@
                     }
                 }
             }
+
             // Fallback-Fehlermeldung
-            throw new Error("Fehler bei der API-Anfrage nach Wiederholungen.");
+            throw new Error('Fehler bei der API-Anfrage nach Wiederholungen.');
         }
 
     </script>
