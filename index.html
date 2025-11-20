@@ -356,9 +356,11 @@
         // --- Zentrale API-Aufruf-Funktion ---
         async function callGeminiAPI(systemPrompt, userQuery) {
             
-            // API-Endpunkt (Gemini 2.5 Flash)
-            const apiKey = ""; // API-Key ist nicht nötig bei Nutzung in dieser Umgebung
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            // API-Endpunkt (Gemini 1.5 Flash)
+            // WARNING: Storing API keys in client-side code is a major security risk.
+            // This key is visible to anyone who visits the website.
+            const apiKey = "AIzaSyBzd0KJA0phP1RQyTy3rzTo2wmocx_-Umo";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
             const payload = {
                 contents: [{
