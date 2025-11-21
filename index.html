@@ -1,18 +1,22 @@
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>bro - KI-Assistent</title>
+    <title>bro - Premium Assistant</title>
     
+    <!-- Import Google Fonts (Tajawal) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+
     <!-- Firebase SDKs -->
     <script type="module">
-        import { initializeApp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, addDoc, onSnapshot, collection, query, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- 1. إعدادات مفتاح الذكاء الاصطناعي ---
-        // تم وضع المفتاح الذي أرسلته هنا
         const apiKey = "AIzaSyCqKFS1M2dZ9JlBApAAkCdmbuAE2LofGlI"; 
 
         // --- متغيرات عالمية ---
@@ -20,30 +24,37 @@
         let isAuthReady = false;
         let savedQuotesUnsubscribe = null;
 
-        // --- DOM Elements ---
-        const pages = {};
-        const tabs = {};
-        const loadingIndicator = document.getElementById('loadingIndicator');
+    // --- DOM Elements ---
+    let pages = {};
+    let tabs = {};
+    let loadingIndicator;
+    let firebaseError;
+    // language + shortcuts
+    let langSelect;
+    let uiLanguage = 'de'; // 'de' or 'ar'
+    let selectedShortcuts = new Set();
+    let shortcutStates = {}; // key -> 'unknown' | 'present' | 'absent'
+    let bulletInput;
         
-        // Sektion 1 Inputs
-        const eckdatenInput = document.getElementById('eckdatenInput');
-        const erstellenBtn = document.getElementById('erstellenBtn');
-        const outputCard = document.getElementById('outputCard');
-        const outputText = document.getElementById('outputText');
-        const copyBtn = document.getElementById('copyBtn');
-        const saveBtn = document.getElementById('saveBtn');
-        const newCalcBtn = document.getElementById('newCalcBtn');
+    // Sektion 1 Inputs
+    let eckdatenInput;
+    let erstellenBtn;
+    let outputCard;
+    let outputText;
+    let copyBtn;
+    let saveBtn;
+    let newCalcBtn;
 
-        // Sektion 2 Lists
-        const savedQuotesList = document.getElementById('savedQuotesList');
-        const detailView = document.getElementById('detailView');
-        const detailText = document.getElementById('detailText');
-        const detailCloseBtn = document.getElementById('detailCloseBtn');
+    // Sektion 2 Lists
+    let savedQuotesList;
+    let detailView;
+    let detailText;
+    let detailCloseBtn;
 
-        // Sektion 3 Chat
-        const chatMessages = document.getElementById('chatMessages');
-        const chatInput = document.getElementById('chatInput');
-        const chatSendBtn = document.getElementById('chatSendBtn');
+    // Sektion 3 Chat
+    let chatMessages;
+    let chatInput;
+    let chatSendBtn;
 
         // --- Initialisierung ---
         document.addEventListener('DOMContentLoaded', async () => {
@@ -56,6 +67,65 @@
             tabs.gespeichert = document.getElementById('tab-gespeichert');
             tabs.chat = document.getElementById('tab-chat');
 
+            // assign DOM elements after DOM has loaded
+            loadingIndicator = document.getElementById('loadingIndicator');
+            firebaseError = document.getElementById('firebaseError');
+
+            eckdatenInput = document.getElementById('eckdatenInput');
+            erstellenBtn = document.getElementById('erstellenBtn');
+            langSelect = document.getElementById('langSelect');
+            bulletInput = document.getElementById('bulletPoints');
+            outputCard = document.getElementById('outputCard');
+            outputText = document.getElementById('outputText');
+            copyBtn = document.getElementById('copyBtn');
+            saveBtn = document.getElementById('saveBtn');
+            newCalcBtn = document.getElementById('newCalcBtn');
+
+            savedQuotesList = document.getElementById('savedQuotesList');
+            detailView = document.getElementById('detailView');
+            detailText = document.getElementById('detailText');
+            detailCloseBtn = document.getElementById('detailCloseBtn');
+
+            chatMessages = document.getElementById('chatMessages');
+            chatInput = document.getElementById('chatInput');
+            chatSendBtn = document.getElementById('chatSendBtn');
+            const shortcutBar = document.getElementById('shortcutBar');
+
+            // initialize language selector
+            if (langSelect) {
+                langSelect.value = uiLanguage;
+                langSelect.addEventListener('change', (e) => setUILanguage(e.target.value));
+            }
+
+            if (bulletInput) {
+                // nothing special yet
+            }
+
+            // initialize shortcut buttons with tri-state: unknown -> present -> absent -> unknown
+            if (shortcutBar) {
+                shortcutBar.querySelectorAll('.shortcut').forEach(btn => {
+                    const key = btn.dataset.key;
+                    shortcutStates[key] = 'unknown';
+                    btn.dataset.state = 'unknown';
+                    btn.classList.remove('active','present','absent');
+                    btn.addEventListener('click', () => {
+                        const current = shortcutStates[key];
+                        let next;
+                        if (current === 'unknown') next = 'present';
+                        else if (current === 'present') next = 'absent';
+                        else next = 'unknown';
+                        shortcutStates[key] = next;
+                        btn.dataset.state = next;
+                        btn.classList.remove('present','absent','active');
+                        if (next === 'present') {
+                            btn.classList.add('present');
+                        } else if (next === 'absent') {
+                            btn.classList.add('absent');
+                        }
+                    });
+                });
+            }
+
             Object.keys(tabs).forEach(key => {
                 tabs[key].addEventListener('click', () => switchTab(key));
             });
@@ -63,7 +133,6 @@
             switchTab('erstellen');
 
             // --- 2. إعدادات قاعدة البيانات (Firebase) ---
-            // تم دمج الإعدادات التي أرسلتها هنا بشكل صحيح
             try {
                 const firebaseConfig = {
                     apiKey: "AIzaSyAVxDxToC0a7qm4IrR76T_r78hdCvt-sNA",
@@ -74,7 +143,6 @@
                     appId: "1:981983709791:web:fe9ebfa8b1eb290e2129ea"
                 };
 
-                // استخدمنا معرف التطبيق من الإعدادات لضمان توافق البيانات
                 appId = firebaseConfig.projectId;
 
                 const app = initializeApp(firebaseConfig);
@@ -85,7 +153,6 @@
 
             } catch (error) {
                 console.error("Firebase Init Error:", error);
-                alert("Fehler bei der Verbindung zur Datenbank.");
             }
 
             // Event Listeners
@@ -98,6 +165,30 @@
                 if (e.key === 'Enter') sendChatMessage();
             });
             detailCloseBtn.addEventListener('click', () => detailView.classList.remove('active'));
+
+            // small UI translations
+            function setUILanguage(lang) {
+                uiLanguage = lang;
+                if (uiLanguage === 'ar') {
+                    eckdatenInput.placeholder = 'أدخل بيانات المكان (مثال: 80م²، 3 غرف، من هامبورغ إلى برلين)...';
+                    erstellenBtn.innerHTML = '✨ إنشاء العرض';
+                    copyBtn.innerHTML = '📋 نسخ';
+                    saveBtn.innerHTML = '<span>💾</span> حفظ';
+                    newCalcBtn.innerHTML = '↺ إعادة ضبط';
+                    if (bulletInput) bulletInput.placeholder = 'أدخل رؤوس أقلام للعرض هنا (سطر لكل بند)';
+                    chatInput.placeholder = 'اكتب رسالة...';
+                } else {
+                    eckdatenInput.placeholder = 'Eckdaten eingeben (z.B. 80m², 3 Zimmer, Hamburg nach Berlin)...';
+                    erstellenBtn.innerHTML = '✨ Angebot generieren';
+                    copyBtn.innerHTML = '📋 Kopieren';
+                    saveBtn.innerHTML = '<span>💾</span> Speichern';
+                    newCalcBtn.innerHTML = '↺ Zurücksetzen';
+                    if (bulletInput) bulletInput.placeholder = 'Geben Sie Stichpunkte für das Angebot ein (eine Zeile pro Punkt)';
+                    chatInput.placeholder = 'Schreib eine Nachricht...';
+                }
+            }
+
+            setUILanguage(uiLanguage);
         });
 
         // --- Auth Logic ---
@@ -107,6 +198,7 @@
                     userId = user.uid;
                     isAuthReady = true;
                     loadSavedQuotes();
+                    updateUserStatus("Active", "online");
                 } else {
                     try {
                         await signInAnonymously(auth);
@@ -115,6 +207,16 @@
                     }
                 }
             });
+        }
+
+        function updateUserStatus(status, type) {
+            const statusEl = document.getElementById('userStatus');
+            const statusDot = document.getElementById('statusDot');
+            if(statusEl) statusEl.innerText = status;
+            if(statusDot) {
+                statusDot.style.background = type === 'online' ? '#10b981' : '#ef4444';
+                statusDot.style.boxShadow = type === 'online' ? '0 0 10px #10b981' : 'none';
+            }
         }
 
         // --- Navigation ---
@@ -136,28 +238,72 @@
             }
 
             erstellenBtn.disabled = true;
-            erstellenBtn.textContent = 'KI arbeitet...';
-            loadingIndicator.style.display = 'block';
+            erstellenBtn.innerHTML = '<span class="loader"></span> Verarbeitung...';
             
-            const systemPrompt = `Du bist 'bro', ein professioneller Umzugs-Assistent in Hamburg. Erstelle ein Angebot basierend auf diesen Daten.
-            Struktur:
-            1. Anrede
-            2. Leistungen
-            3. Preis (Netto + MwSt = Brutto)
-            4. Abschluss.`;
-            
+            // build prompts based on selected UI language
+            const shortcutLabels = {
+                'elevator': { de: 'Aufzug vorhanden', ar: 'يوجد مصعد' },
+                'no-elevator': { de: 'Kein Aufzug', ar: 'لا يوجد مصعد' },
+                'stairs': { de: 'Treppe vorhanden', ar: 'يوجد درج' },
+                'floor': { de: 'Mehrere Etagen', ar: 'طوابق/طابق' },
+                'area': { de: 'Große Fläche', ar: 'مساحة كبيرة' },
+                'parking': { de: 'Parkplatz vorhanden', ar: 'يوجد موقف سيارات' },
+                'fragile': { de: 'Viele zerbrechliche Gegenstände', ar: 'أغراض هشة' }
+            };
+
+                let systemPrompt;
+                if (uiLanguage === 'ar') {
+                    // Arabic specialized prompt
+                    systemPrompt = `أنت 'bro'، مساعد محترف في مجال النقل (نقل أثاث ومركبات) ومختص في أسعار هامبورغ المحلية. لا تقترح خدمات تنظيف.\nالمطلوب: إنشاء عرض سعر مفصّل ومقروء للعميل يتضمن:\n- تحية قصيرة\n- قائمة الخدمات بالبنود (تحميل، نقل، تفريغ، تعبئة إذا طُلب)\n- حساب تكلفة مفصّلة (سعر العمل بالساعات، رسوم الوقود/تنقّل، رسوم موقف/تحميل/مصعد إن وُجد، أي تكاليف إضافية)\n- تفصيل صافي + ضريبة القيمة المضافة (19%) = الإجمالي\n- ملحوظات وسيناريوهات بديلة إذا لزم الأمر\nاطلب دائمًا رؤوس أقلام واضحة من العميل (سطر لكل بند) قبل الحساب، واستخدم أسعار سوق هامبورغ مع دقة عملية.`;
+                } else {
+                    // German specialized prompt
+                    systemPrompt = `Du bist 'bro', ein professioneller Umzugs-Assistent spezialisiert auf Möbel- und Fahrzeugtransporte mit Kenntnis der aktuellen Marktpreise in Hamburg. Schließe Reinigungsdienstleistungen aus.\nAufgabe: Erstelle ein ausführliches, kundenfreundliches Angebot inklusive:\n- kurze Anrede\n- detaillierte Leistungspositionen (z.B. Verpacken, Verladen, Transport, Entladen)\n- detaillierte Kostenzusammenstellung (Arbeitsstunden, Fahrt-/Anfahrtskosten, Park-/Be-Entladegebühren, Nutzung Aufzug/Treppe)\n- Preisaufstellung Netto + MwSt (19%) = Brutto\n- Hinweise und alternative Szenarien falls nötig\nFordere zunächst immer klare Stichpunkte (eine Zeile pro Punkt) vom Kunden, und nutze realistische Hamburg-Preise mit präziser Kalkulation.`;
+            }
+
+            // include selected shortcuts into the user query
+                // include selected shortcuts and bullet points into the user query
+                let userQueryWithShortcuts = eckdaten;
+                const shortcutParts = [];
+                Object.keys(shortcutStates || {}).forEach(k => {
+                    const state = shortcutStates[k];
+                    if (!state || state === 'unknown') return; // skip unknown
+                    if (state === 'present') {
+                        shortcutParts.push(shortcutLabels[k] ? shortcutLabels[k][uiLanguage] : `${k}: present`);
+                    } else if (state === 'absent') {
+                        // use opposite label for absent
+                        const absentLabel = uiLanguage === 'ar' ? (k === 'no-elevator' ? 'لا يوجد مصعد' : (shortcutLabels[k] ? (shortcutLabels[k][uiLanguage] + ' غير موجود') : `${k}: absent`)) : (k === 'no-elevator' ? 'Kein Aufzug' : (shortcutLabels[k] ? (shortcutLabels[k][uiLanguage] + ' fehlt') : `${k}: absent`));
+                        // For keys explicitly representing absence (no-elevator) present-> we handled above; here we indicate absence
+                        shortcutParts.push(absentLabel);
+                    }
+                });
+                if (shortcutParts.length > 0) {
+                    const prefix = uiLanguage === 'ar' ? '\nملاحظات الموقع: ' : '\nKurzinfo: ';
+                    userQueryWithShortcuts += prefix + shortcutParts.join(' • ');
+                }
+
+                // bullets are optional — if absent, produce a preliminary offer based on provided info
+                const bullets = (bulletInput && bulletInput.value) ? bulletInput.value.trim() : '';
+                if (bullets) {
+                    userQueryWithShortcuts += (uiLanguage === 'ar' ? '\n\nرؤوس أقلام:\n' : '\n\nStichpunkte:\n') + bullets;
+                } else {
+                    // attach a short instruction so the model generates a preliminary estimate without asking for more
+                    const prelimNote = uiLanguage === 'ar' ? '\n\nهذه مسودة عرض أولي مبني على المعلومات المتاحة؛ أعد حساب العرض بدقة عند تزويدك برؤوس أقلام أو تفاصيل إضافية.' : '\n\nDies ist ein vorläufiges Angebot basierend auf den vorhandenen Informationen; bitte aktualisieren Sie die Stichpunkte für eine genaue Kalkulation.';
+                    userQueryWithShortcuts += prelimNote;
+                }
+
             try {
-                const responseText = await callGeminiAPI(systemPrompt, eckdaten);
+                const responseText = await callGeminiAPI(systemPrompt, userQueryWithShortcuts);
                 outputText.value = responseText; 
                 outputCard.classList.add('active');
+                // Scroll to result
+                outputCard.scrollIntoView({ behavior: 'smooth' });
             } catch (error) {
                 console.error(error);
                 outputText.value = "Fehler: " + error.message;
                 outputCard.classList.add('active');
             } finally {
                 erstellenBtn.disabled = false;
-                erstellenBtn.textContent = '✨ Angebot erstellen';
-                loadingIndicator.style.display = 'none';
+                erstellenBtn.innerHTML = '✨ Angebot generieren';
             }
         }
 
@@ -166,17 +312,14 @@
             try {
                 document.execCommand('copy');
                 copyBtn.textContent = 'Kopiert!';
-                setTimeout(() => copyBtn.textContent = 'Kopieren', 2000);
+                setTimeout(() => copyBtn.textContent = 'Text kopieren', 2000);
             } catch (e) {
                 alert("Fehler beim Kopieren");
             }
         }
 
         async function saveOffer() {
-            if (!isAuthReady || !db) {
-                alert("Datenbank lädt noch...");
-                return;
-            }
+            if (!isAuthReady || !db) return;
             
             const textToSave = outputText.value;
             if (textToSave.startsWith("Fehler")) return;
@@ -194,15 +337,14 @@
                 
                 saveBtn.textContent = 'Gespeichert!';
                 setTimeout(() => {
-                    saveBtn.textContent = '✨ Speichern';
+                    saveBtn.innerHTML = '<span>💾</span> Speichern';
                     saveBtn.disabled = false;
                 }, 2000);
 
             } catch (error) {
                 console.error(error);
-                alert("Speichern fehlgeschlagen: " + error.message);
                 saveBtn.disabled = false;
-                saveBtn.textContent = '✨ Speichern';
+                saveBtn.textContent = 'Speichern';
             }
         }
 
@@ -219,13 +361,12 @@
 
             try {
                 const collectionPath = `artifacts/${appId}/users/${userId}/saved_quotes`;
-                // Simple query without orderBy to avoid index errors
                 const q = query(collection(db, collectionPath));
 
                 savedQuotesUnsubscribe = onSnapshot(q, (snapshot) => {
                     savedQuotesList.innerHTML = ''; 
                     if (snapshot.empty) {
-                        savedQuotesList.innerHTML = '<li class="list-item-empty">Keine Daten.</li>';
+                        savedQuotesList.innerHTML = '<div class="empty-state">Keine Transaktionen gefunden.</div>';
                         return;
                     }
 
@@ -234,15 +375,24 @@
                         quotes.push({ id: doc.id, ...doc.data() });
                     });
                     
-                    // Client-side sorting
                     quotes.sort((a, b) => new Date(b.date_saved) - new Date(a.date_saved));
 
                     quotes.forEach((data) => {
+                        const dateObj = new Date(data.date_saved);
+                        const dateStr = dateObj.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+                        const timeStr = dateObj.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                        
                         const li = document.createElement('li');
-                        li.className = 'list-item';
+                        li.className = 'list-item glass-panel';
                         li.innerHTML = `
-                            <strong>${(data.input_prompt || "").substring(0, 30)}...</strong>
-                            <span>${new Date(data.date_saved).toLocaleDateString('de-DE')}</span>
+                            <div class="list-icon">📄</div>
+                            <div class="list-content">
+                                <div class="list-title">${(data.input_prompt || "Angebot").substring(0, 25)}...</div>
+                                <div class="list-sub">${dateStr} • ${timeStr}</div>
+                            </div>
+                            <div class="list-action">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </div>
                         `;
                         li.addEventListener('click', () => showQuoteDetail(data));
                         savedQuotesList.appendChild(li);
@@ -266,7 +416,7 @@
             addChatMessage(msg, 'user');
             chatInput.value = '';
 
-            const systemPrompt = `Du bist 'bro-Profi', ein Experte für Umzugsunternehmen. Hilf dem Inhaber kurz und prägnant.`;
+            const systemPrompt = `Du bist 'bro-Profi', ein strategischer Business-Coach für Umzugsunternehmen. Deine Antworten sind kurz, professionell und direkt.`;
 
             try {
                 addChatMessage("...", 'ai-typing');
@@ -309,8 +459,7 @@
             });
 
             if (!response.ok) {
-                const txt = await response.text();
-                throw new Error(`API Error: ${response.status} ${txt}`);
+                throw new Error(`API Error: ${response.status}`);
             }
 
             const data = await response.json();
@@ -320,116 +469,520 @@
     </script>
 
     <style>
+        /* --- DESIGN SYSTEM: AURORA FINTECH --- */
         :root {
-            --bg: #F5F5F5; --card: #FFF; --input: #EEE;
-            --text: #222; --primary: #007BFF; --green: #28a745;
-            --shadow: 0 2px 8px rgba(0,0,0,0.1);
+            --bg-dark: #0f172a; /* Slate 900 */
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-highlight: rgba(255, 255, 255, 0.1);
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); /* Indigo to Purple */
+            --accent-color: #818cf8;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --card-radius: 24px;
+            --font-family: 'Tajawal', sans-serif;
         }
-        body { font-family: sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; color: var(--text); }
-        .page { display: none; padding: 20px; }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-family);
+            overflow-x: hidden;
+            min-height: 100vh;
+            padding-bottom: 90px; /* Space for floating dock */
+        }
+
+        /* --- Aurora Background Effects --- */
+        .aurora-blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.4;
+            animation: float 10s infinite ease-in-out;
+        }
+        .blob-1 { top: -10%; left: -10%; width: 300px; height: 300px; background: #4f46e5; animation-delay: 0s; }
+        .blob-2 { bottom: 10%; right: -5%; width: 250px; height: 250px; background: #ec4899; animation-delay: 2s; }
+        .blob-3 { top: 40%; left: 30%; width: 200px; height: 200px; background: #06b6d4; animation-delay: 4s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(20px, -20px); }
+        }
+
+        /* --- Layout & Utilities --- */
+        .page {
+            display: none;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            animation: fadeIn 0.3s ease;
+        }
         .page.active { display: block; }
-        .input-card, #outputCard, .list-item {
-            background: var(--card); padding: 15px; border-radius: 8px;
-            box-shadow: var(--shadow); margin-bottom: 15px;
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        textarea, input {
-            width: 100%; border: none; background: var(--input);
-            padding: 10px; border-radius: 8px; box-sizing: border-box;
+
+        h2 {
+            font-size: 18px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        /* --- Components: Glass Card (Credit Card Style) --- */
+        .glass-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02));
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--card-radius);
+            padding: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        /* Shine effect on card */
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -50%;
+            width: 100%; height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.05), transparent);
+            transform: skewX(-25deg);
+            pointer-events: none;
+        }
+
+        /* Input Fields (Invisible/Ghost) */
+        textarea, input[type="text"] {
+            width: 100%;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 16px;
+            color: #fff;
+            font-family: var(--font-family);
             font-size: 16px;
+            resize: none;
+            outline: none;
+            transition: all 0.3s ease;
         }
-        textarea { min-height: 100px; resize: vertical; }
-        .btn {
-            width: 100%; padding: 12px; border: none; border-radius: 8px;
-            background: var(--primary); color: #fff; font-weight: bold;
-            margin-top: 10px; cursor: pointer;
+        textarea:focus, input[type="text"]:focus {
+            background: rgba(0,0,0,0.4);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
         }
-        .btn-green { background: var(--green); }
-        .btn-secondary { background: #6c757d; }
-        .list-item { display: flex; justify-content: space-between; cursor: pointer; }
+
+        /* Primary Button (Gradient) */
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 16px;
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+            transition: transform 0.2s;
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-primary:disabled { opacity: 0.7; cursor: wait; }
+
+        /* Secondary Actions (Row) */
+        .actions-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .btn-icon {
+            flex: 1;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+        .btn-icon:hover { background: rgba(255,255,255,0.1); }
+
+        /* --- List Items (Transaction Style) --- */
+        .list-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .list-item:active { transform: scale(0.98); background: rgba(255,255,255,0.06); }
         
-        /* Chat */
-        .chat-container { height: calc(100vh - 130px); display: flex; flex-direction: column; }
-        #chatMessages { flex: 1; overflow-y: auto; padding: 10px; background: var(--card); border-radius: 8px; }
+        .list-icon {
+            width: 40px; height: 40px;
+            background: rgba(99, 102, 241, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-right: 15px;
+            color: #fff;
+        }
+        .list-content { flex: 1; }
+        .list-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+        .list-sub { font-size: 12px; color: var(--text-muted); font-family: monospace; }
+        .list-action { color: var(--text-muted); opacity: 0.5; }
+
+        /* Shortcut chips */
+        .shortcut {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            padding: 8px 10px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .shortcut.present {
+            background: linear-gradient(90deg, #10b981, #34d399);
+            color: #062f2f;
+            box-shadow: 0 6px 18px rgba(16,185,129,0.12);
+            transform: translateY(-2px);
+        }
+        .shortcut.absent {
+            background: linear-gradient(90deg, #ef4444, #f97316);
+            color: #2b0b00;
+            box-shadow: 0 6px 18px rgba(239,68,68,0.12);
+            transform: translateY(-2px);
+        }
+
+        /* --- Chat Interface --- */
+        .chat-container {
+            height: calc(100vh - 180px);
+            display: flex;
+            flex-direction: column;
+        }
+        #chatMessages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 0;
+            /* Hide scrollbar */
+            scrollbar-width: none;
+        }
         .chat-bubble {
-            max-width: 80%; padding: 8px 12px; margin: 5px 0; border-radius: 15px;
-            width: fit-content;
+            max-width: 80%;
+            padding: 12px 16px;
+            margin: 8px 0;
+            border-radius: 20px;
+            font-size: 15px;
+            line-height: 1.5;
+            position: relative;
         }
-        .chat-bubble.user { background: var(--primary); color: #fff; margin-left: auto; }
-        .chat-bubble.ai { background: var(--input); margin-right: auto; }
-        .chat-input-area { display: flex; gap: 10px; margin-top: 10px; }
+        .chat-bubble.user {
+            background: var(--primary-gradient);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+        .chat-bubble.ai {
+            background: rgba(255,255,255,0.08);
+            color: #e2e8f0;
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+            border: 1px solid var(--glass-border);
+        }
+        .input-bar {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+        .input-bar input {
+            background: transparent;
+            border: none;
+            padding: 10px 15px;
+            box-shadow: none;
+        }
+        .send-btn {
+            background: var(--primary-gradient);
+            border: none;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+        }
+
+        /* --- Floating Tab Dock --- */
+        .tab-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            height: 70px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 35px;
+            display: flex;
+            justify-content: space-evenly;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            max-width: 500px;
+            margin: 0 auto;
+        }
         
+        .tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 10px;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 60px;
+        }
+        .tab-item svg { width: 24px; height: 24px; stroke-width: 1.5; transition: all 0.3s; }
+        
+        .tab-item.active { color: var(--text-main); }
+        .tab-item.active svg { 
+            stroke: #a855f7; 
+            filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.6));
+            transform: translateY(-2px);
+        }
+
+        /* --- Header User Profile --- */
+        .header-profile {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 5px 20px 5px;
+        }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .avatar {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(to bottom right, #6366f1, #ec4899);
+            padding: 2px;
+        }
+        .avatar img { width: 100%; height: 100%; border-radius: 50%; background: #000; object-fit: cover; }
+        .user-text h3 { margin: 0; font-size: 14px; font-weight: 700; }
+        .user-text p { margin: 0; font-size: 11px; color: var(--text-muted); }
+        
+        .status-badge {
+            background: rgba(255,255,255,0.05);
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .dot { width: 6px; height: 6px; background: #ef4444; border-radius: 50%; }
+
         /* Detail Modal */
         #detailView {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-            display: none; justify-content: center; align-items: center; z-index: 2000;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            display: none;
+            justify-content: center;
+            align-items: flex-end; /* Slide up from bottom */
+            z-index: 2000;
+            padding-bottom: 20px;
         }
-        #detailView.active { display: flex; }
-        .detail-content { background: #fff; padding: 20px; border-radius: 8px; width: 90%; max-height: 80vh; overflow: auto; }
+        #detailView.active { display: flex; animation: slideUp 0.3s ease; }
         
-        /* Tab Bar */
-        .tab-bar {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: #fff; display: flex; justify-content: space-around;
-            padding: 10px; box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
         }
-        .tab-item { text-align: center; font-size: 12px; color: #888; cursor: pointer; }
-        .tab-item.active { color: var(--primary); font-weight: bold; }
-        
-        #loadingIndicator {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
-            width: 40px; height: 40px; border: 4px solid #ccc;
-            border-top-color: var(--primary); border-radius: 50%;
-            animation: spin 1s infinite; display: none; z-index: 3000;
+
+        .detail-content {
+            background: #1e293b;
+            border: 1px solid var(--glass-border);
+            width: 90%;
+            max-width: 600px;
+            border-radius: 24px;
+            padding: 24px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
         }
-        @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+        pre {
+            white-space: pre-wrap;
+            color: #cbd5e1;
+            font-family: var(--font-family);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .loader {
+            width: 16px; height: 16px;
+            border: 2px solid #FFF;
+            border-bottom-color: transparent;
+            border-radius: 50%;
+            display: inline-block;
+            animation: rotation 1s linear infinite;
+        }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .empty-state { text-align: center; color: var(--text-muted); margin-top: 40px; opacity: 0.6; }
     </style>
 </head>
 <body>
-    <div id="loadingIndicator"></div>
+    <!-- Aurora Backgrounds -->
+    <div class="aurora-blob blob-1"></div>
+    <div class="aurora-blob blob-2"></div>
+    <div class="aurora-blob blob-3"></div>
 
+    <!-- Page 1: Create (The "Credit Card" View) -->
     <div id="page-erstellen" class="page active">
-        <div class="input-card">
-            <h2>Neues Angebot</h2>
-            <textarea id="eckdatenInput" placeholder="Z.B. 3 Zimmer, 2. OG, nach Hamburg-Mitte..."></textarea>
-            <button id="erstellenBtn" class="btn">✨ Erstellen</button>
-        </div>
-        <div id="outputCard" style="display:none;">
-            <textarea id="outputText" readonly></textarea>
-            <div style="display:flex; gap:10px;">
-                <button id="copyBtn" class="btn">Kopieren</button>
-                <button id="saveBtn" class="btn btn-green">Speichern</button>
+        <!-- Header -->
+        <div class="header-profile">
+            <div class="user-info">
+                <div class="avatar"><img src="https://api.dicebear.com/9.x/avataaars/svg?seed=Felix" alt="User"></div>
+                <div class="user-text">
+                    <p>Willkommen zurück</p>
+                    <h3>Premium Assistant</h3>
+                </div>
             </div>
-            <button id="newCalcBtn" class="btn btn-secondary">Neu</button>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <select id="langSelect" style="background:transparent; color:var(--text-main); border:1px solid var(--glass-border); padding:6px 10px; border-radius:10px;">
+                    <option value="de">Deutsch</option>
+                    <option value="ar">العربية</option>
+                </select>
+                <div class="status-badge">
+                <div class="dot" id="statusDot"></div>
+                <span id="userStatus">Connecting...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Card (Styled like a Credit Card) -->
+        <div class="glass-card">
+            <h2 style="color:#fff; opacity:0.9; margin-bottom: 20px;">Neues Angebot</h2>
+            <textarea id="eckdatenInput" placeholder="Eckdaten eingeben (z.B. 80m², 3 Zimmer, Hamburg nach Berlin)..." rows="4"></textarea>
+            <div id="shortcutBar" style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+                <button type="button" class="shortcut" data-key="elevator">Aufzug / مصعد</button>
+                <button type="button" class="shortcut" data-key="no-elevator">Kein Aufzug / لا مصعد</button>
+                <button type="button" class="shortcut" data-key="stairs">Treppe / درج</button>
+                <button type="button" class="shortcut" data-key="floor">Etage / طابق</button>
+                <button type="button" class="shortcut" data-key="area">Fläche / المساحة</button>
+                <button type="button" class="shortcut" data-key="parking">Parkplatz / موقف</button>
+                <button type="button" class="shortcut" data-key="fragile">Zerbrechlich / هش</button>
+            </div>
+            <textarea id="bulletPoints" rows="3" style="margin-top:10px; resize:vertical;" placeholder="Geben Sie Stichpunkte für das Angebot ein (eine Zeile pro Punkt)"></textarea>
+            <button id="erstellenBtn" class="btn-primary">
+                ✨ Angebot generieren
+            </button>
+        </div>
+
+        <!-- Output Card (Initially Hidden) -->
+        <div id="outputCard" class="glass-card" style="display:none; border-color: var(--accent-color);">
+            <h2 style="color: var(--accent-color);">Ergebnis</h2>
+            <textarea id="outputText" readonly rows="8" style="font-family: monospace; font-size: 13px; line-height: 1.5;"></textarea>
+            
+            <div class="actions-row">
+                <button id="copyBtn" class="btn-icon">
+                    <span>📋</span> Kopieren
+                </button>
+                <button id="saveBtn" class="btn-icon" style="border-color: rgba(16, 185, 129, 0.3); color: #34d399;">
+                    <span>💾</span> Speichern
+                </button>
+            </div>
+            <button id="newCalcBtn" class="btn-icon" style="width:100%; margin-top:10px; background: transparent; border:none;">
+                ↺ Zurücksetzen
+            </button>
         </div>
     </div>
 
+    <!-- Page 2: Saved (Transaction History Style) -->
     <div id="page-gespeichert" class="page">
-        <h2>Gespeichert</h2>
-        <ul id="savedQuotesList" style="padding:0; list-style:none;"></ul>
+        <h2 style="margin-left: 5px;">Gespeicherte Angebote</h2>
+        <ul id="savedQuotesList" style="list-style:none; padding:0;">
+            <!-- Items added by JS -->
+        </ul>
     </div>
 
+    <!-- Page 3: Chat (Concierge Style) -->
     <div id="page-chat" class="page">
-        <h2>Profi-Chat</h2>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div style="width: 50px; height: 50px; background: var(--primary-gradient); border-radius: 50%; margin: 0 auto 10px; display:flex; align-items:center; justify-content:center; font-size:24px;">🤖</div>
+            <h3 style="margin:0;">AI Profi Coach</h3>
+            <p style="margin:0; font-size:12px; color:var(--text-muted);">Online • Antwortet sofort</p>
+        </div>
+        
         <div class="chat-container">
-            <div id="chatMessages"></div>
-            <div class="chat-input-area">
-                <input id="chatInput" placeholder="Frage...">
-                <button id="chatSendBtn" class="btn" style="width:auto;">Send</button>
+            <div id="chatMessages">
+                <div class="chat-bubble ai">Hallo! Ich bin dein Strategie-Coach. Wie kann ich deinem Business heute helfen?</div>
+            </div>
+            <div class="input-bar">
+                <input type="text" id="chatInput" placeholder="Schreib eine Nachricht..." style="border:none; background:transparent; padding:0 10px;">
+                <button id="chatSendBtn" class="send-btn">➤</button>
             </div>
         </div>
     </div>
 
+    <!-- Detail Modal -->
     <div id="detailView">
         <div class="detail-content">
-            <pre id="detailText" style="white-space: pre-wrap;"></pre>
-            <button id="detailCloseBtn" class="btn btn-secondary">Schließen</button>
+            <h3 style="margin-top:0;">Details</h3>
+            <pre id="detailText"></pre>
+            <button id="detailCloseBtn" class="btn-primary" style="margin-top:20px; background: rgba(255,255,255,0.1);">Schließen</button>
         </div>
     </div>
 
+    <!-- Floating Tab Dock -->
     <nav class="tab-bar">
-        <div class="tab-item active" id="tab-erstellen">Erstellen</div>
-        <div class="tab-item" id="tab-gespeichert">Gespeichert</div>
-        <div class="tab-item" id="tab-chat">Chat</div>
+        <div class="tab-item active" id="tab-erstellen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></svg>
+            <span>Erstellen</span>
+        </div>
+        <div class="tab-item" id="tab-gespeichert">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            <span>Liste</span>
+        </div>
+        <div class="tab-item" id="tab-chat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            <span>Chat</span>
+        </div>
     </nav>
 </body>
 </html>
